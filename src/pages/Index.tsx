@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { DashboardMetrics } from "@/components/DashboardMetrics";
-import { ClientsList } from "@/components/ClientsList";
+import { FunnelBoard } from "@/components/FunnelBoard";
 
 const Index = () => {
   return (
@@ -10,8 +10,8 @@ const Index = () => {
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <DashboardMetrics />
         <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Clientes</h2>
-          <ClientsList />
+          <h2 className="text-2xl font-bold mb-4">Funis de Venda</h2>
+          <FunnelBoard />
         </div>
       </main>
     </div>
