@@ -6,18 +6,40 @@ import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 
-const Login = () => {
+const Register = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulação de login bem-sucedido
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "As senhas não coincidem",
+      });
+      return;
+    }
+
+    // Simulação de registro bem-sucedido
     localStorage.setItem("isAuthenticated", "true");
     toast({
-      title: "Login realizado com sucesso!",
+      title: "Registro realizado com sucesso!",
       description: "Redirecionando para o dashboard...",
     });
     navigate("/");
@@ -27,18 +49,30 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center gradient-bg p-4">
       <Card className="w-full max-w-md card-gradient">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl text-center">Login CRM PRO+</CardTitle>
+          <CardTitle className="text-2xl text-center">Criar Conta CRM PRO+</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="name">Nome Completo</Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="Seu nome completo"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
                 required
               />
             </div>
@@ -46,9 +80,21 @@ const Login = () => {
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
                 required
               />
             </div>
@@ -57,7 +103,7 @@ const Login = () => {
                 type="submit"
                 className="w-full bg-gradient-to-r from-purple-600 to-black"
               >
-                Entrar
+                Criar Conta
               </Button>
               <Button
                 type="button"
@@ -69,16 +115,13 @@ const Login = () => {
               </Button>
             </div>
           </form>
-          <div className="mt-4 text-center space-y-2">
-            <Link to="/forgot-password" className="text-sm text-primary hover:underline block">
-              Esqueceu sua senha?
-            </Link>
-            <div className="text-sm">
-              Não tem uma conta?{" "}
-              <Link to="/register" className="text-primary hover:underline">
-                Registre-se
+          <div className="mt-4 text-center">
+            <p className="text-sm">
+              Já tem uma conta?{" "}
+              <Link to="/login" className="text-primary hover:underline">
+                Faça login
               </Link>
-            </div>
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -86,4 +129,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
