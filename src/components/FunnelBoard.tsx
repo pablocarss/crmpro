@@ -7,6 +7,7 @@ import { CreateFunnelForm } from "./CreateFunnelForm";
 import { CreateClientForm } from "./CreateClientForm";
 import { useToast } from "./ui/use-toast";
 import { FunnelStage } from "./FunnelStage";
+import { StageUpdateForm } from "./StageUpdateForm";
 
 interface Client {
   id: string;
@@ -28,6 +29,12 @@ interface Funnel {
   stages: Stage[];
 }
 
+interface Product {
+  id: string;
+  name: string;
+  value: number;
+}
+
 export function FunnelBoard() {
   const { toast } = useToast();
   const [funnels, setFunnels] = useState<Funnel[]>([
@@ -43,11 +50,33 @@ export function FunnelBoard() {
     },
   ]);
   const [activeFunnel, setActiveFunnel] = useState<string>("1");
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [pendingMove, setPendingMove] = useState<any>(null);
+
+  // Simulação de produtos
+  const [products] = useState<Product[]>([
+    { id: "p1", name: "Produto Basic", value: 99.90 },
+    { id: "p2", name: "Produto Pro", value: 199.90 },
+    { id: "p3", name: "Produto Enterprise", value: 299.90 },
+  ]);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
 
     const { source, destination } = result;
+    
+    if (source.droppableId !== destination.droppableId) {
+      setShowUpdateForm(true);
+      setPendingMove(result);
+      return;
+    }
+
+    moveClient(result);
+  };
+
+  const moveClient = (moveDetails: any) => {
+    const { source, destination } = moveDetails;
     const currentFunnel = funnels.find((f) => f.id === activeFunnel);
     if (!currentFunnel) return;
 
@@ -69,6 +98,11 @@ export function FunnelBoard() {
   };
 
   const handleClientUpdate = (clientId: string, updatedData: Partial<Client>) => {
+    if (pendingMove) {
+      moveClient(pendingMove);
+      setPendingMove(null);
+    }
+
     const newFunnels = [...funnels];
     const currentFunnel = newFunnels.find((f) => f.id === activeFunnel);
     if (!currentFunnel) return;
@@ -81,6 +115,9 @@ export function FunnelBoard() {
     });
 
     setFunnels(newFunnels);
+    setShowUpdateForm(false);
+    setSelectedClient(null);
+    
     toast({
       title: "Cliente atualizado",
       description: "As informações do cliente foram atualizadas com sucesso!",
@@ -133,19 +170,36 @@ export function FunnelBoard() {
             <DialogHeader>
               <DialogTitle>Adicionar Novo Cliente</DialogTitle>
             </DialogHeader>
-            <CreateClientForm onSubmit={(newClient) => {
-              const newFunnels = [...funnels];
-              const funnelIndex = newFunnels.findIndex((f) => f.id === activeFunnel);
-              newFunnels[funnelIndex].stages[0].clients.push(newClient);
-              setFunnels(newFunnels);
-              toast({
-                title: "Cliente adicionado",
-                description: `${newClient.name} foi adicionado ao funil!`,
-              });
-            }} />
+            <CreateClientForm 
+              products={products}
+              onSubmit={(newClient) => {
+                const newFunnels = [...funnels];
+                const funnelIndex = newFunnels.findIndex((f) => f.id === activeFunnel);
+                newFunnels[funnelIndex].stages[0].clients.push(newClient);
+                setFunnels(newFunnels);
+                toast({
+                  title: "Cliente adicionado",
+                  description: `${newClient.name} foi adicionado ao funil!`,
+                });
+              }} 
+            />
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={showUpdateForm} onOpenChange={setShowUpdateForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Atualizar Cliente</DialogTitle>
+          </DialogHeader>
+          {selectedClient && (
+            <StageUpdateForm
+              client={selectedClient}
+              onSubmit={(data) => handleClientUpdate(selectedClient.id, data)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-4 gap-4">

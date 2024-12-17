@@ -42,7 +42,11 @@ const Register = () => {
       title: "Registro realizado com sucesso!",
       description: "Redirecionando para o dashboard...",
     });
-    navigate("/");
+    
+    // Aguarda um breve momento para mostrar o toast antes de redirecionar
+    setTimeout(() => {
+      navigate("/");
+    }, 1000);
   };
 
   return (

@@ -14,13 +14,18 @@ const Login = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
     // Simulação de login bem-sucedido
     localStorage.setItem("isAuthenticated", "true");
     toast({
       title: "Login realizado com sucesso!",
       description: "Redirecionando para o dashboard...",
     });
-    navigate("/");
+    
+    // Aguarda um breve momento para mostrar o toast antes de redirecionar
+    setTimeout(() => {
+      navigate("/");
+    }, 1000);
   };
 
   return (

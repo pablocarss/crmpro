@@ -12,17 +12,35 @@ interface Client {
   product: string;
 }
 
-interface CreateClientFormProps {
-  onSubmit: (client: Client) => void;
+interface Product {
+  id: string;
+  name: string;
+  value: number;
 }
 
-export function CreateClientForm({ onSubmit }: CreateClientFormProps) {
+interface CreateClientFormProps {
+  onSubmit: (client: Client) => void;
+  products: Product[];
+}
+
+export function CreateClientForm({ onSubmit, products }: CreateClientFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     value: "",
     product: "",
   });
+
+  const handleProductSelect = (productId: string) => {
+    const selectedProduct = products.find((p) => p.id === productId);
+    if (selectedProduct) {
+      setFormData({
+        ...formData,
+        product: selectedProduct.name,
+        value: selectedProduct.value.toString(),
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +75,21 @@ export function CreateClientForm({ onSubmit }: CreateClientFormProps) {
         />
       </div>
       <div className="space-y-2">
+        <Label htmlFor="product">Produto</Label>
+        <Select onValueChange={handleProductSelect}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione um produto" />
+          </SelectTrigger>
+          <SelectContent>
+            {products.map((product) => (
+              <SelectItem key={product.id} value={product.id}>
+                {product.name} - R$ {product.value}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
         <Label htmlFor="value">Valor</Label>
         <Input
           id="value"
@@ -64,15 +97,7 @@ export function CreateClientForm({ onSubmit }: CreateClientFormProps) {
           value={formData.value}
           onChange={(e) => setFormData({ ...formData, value: e.target.value })}
           required
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="product">Produto</Label>
-        <Input
-          id="product"
-          value={formData.product}
-          onChange={(e) => setFormData({ ...formData, product: e.target.value })}
-          required
+          readOnly
         />
       </div>
       <Button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-black">
