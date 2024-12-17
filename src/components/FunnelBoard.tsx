@@ -50,37 +50,12 @@ export function FunnelBoard() {
   const [activeFunnel, setActiveFunnel] = useState<string>("1");
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [pendingMove, setPendingMove] = useState<any>(null);
-
-  const [products] = useState<Product[]>([
-    { id: "p1", name: "Produto Basic", value: 99.90 },
-    { id: "p2", name: "Produto Pro", value: 199.90 },
-    { id: "p3", name: "Produto Enterprise", value: 299.90 },
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
 
     const { source, destination } = result;
-    
-    if (source.droppableId !== destination.droppableId) {
-      const currentFunnel = funnels.find((f) => f.id === activeFunnel);
-      if (!currentFunnel) return;
-      
-      const sourceStage = currentFunnel.stages[parseInt(source.droppableId)];
-      const client = sourceStage.clients[source.index];
-      
-      setSelectedClient(client);
-      setShowUpdateForm(true);
-      setPendingMove(result);
-      return;
-    }
-
-    moveClient(result);
-  };
-
-  const moveClient = (moveDetails: any) => {
-    const { source, destination } = moveDetails;
     const currentFunnel = funnels.find((f) => f.id === activeFunnel);
     if (!currentFunnel) return;
 
@@ -102,11 +77,6 @@ export function FunnelBoard() {
   };
 
   const handleClientUpdate = (clientId: string, updatedData: Partial<Client>) => {
-    if (pendingMove) {
-      moveClient(pendingMove);
-      setPendingMove(null);
-    }
-
     const newFunnels = [...funnels];
     const currentFunnel = newFunnels.find((f) => f.id === activeFunnel);
     if (!currentFunnel) return;
@@ -139,6 +109,14 @@ export function FunnelBoard() {
     setFunnels(newFunnels);
   };
 
+  const handleCreateProduct = (product: Product) => {
+    setProducts([...products, { ...product, id: crypto.randomUUID() }]);
+    toast({
+      title: "Produto criado",
+      description: "O produto foi criado com sucesso!",
+    });
+  };
+
   const currentFunnel = funnels.find((f) => f.id === activeFunnel);
 
   return (
@@ -149,6 +127,7 @@ export function FunnelBoard() {
         setActiveFunnel={setActiveFunnel}
         onCreateFunnel={(newFunnel) => setFunnels([...funnels, newFunnel])}
         onCreateClient={handleCreateClient}
+        onCreateProduct={handleCreateProduct}
         products={products}
         stages={currentFunnel?.stages || []}
       />

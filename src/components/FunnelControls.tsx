@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { CreateFunnelForm } from "./CreateFunnelForm";
 import { CreateClientForm } from "./CreateClientForm";
+import { CreateProductForm } from "./CreateProductForm";
 import { useToast } from "./ui/use-toast";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ interface FunnelControlsProps {
   setActiveFunnel: (id: string) => void;
   onCreateFunnel: (newFunnel: any) => void;
   onCreateClient: (newClient: any) => void;
+  onCreateProduct: (newProduct: any) => void;
   products: any[];
   stages: any[];
 }
@@ -27,6 +29,7 @@ export function FunnelControls({
   setActiveFunnel,
   onCreateFunnel,
   onCreateClient,
+  onCreateProduct,
   products,
   stages,
 }: FunnelControlsProps) {
@@ -86,8 +89,20 @@ export function FunnelControls({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <Dialog>
+              <DialogTrigger asChild>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  Gerenciar Produtos
+                </DropdownMenuItem>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar Novo Produto</DialogTitle>
+                </DialogHeader>
+                <CreateProductForm onSubmit={onCreateProduct} />
+              </DialogContent>
+            </Dialog>
             <DropdownMenuItem>Configurações do Funil</DropdownMenuItem>
-            <DropdownMenuItem>Gerenciar Produtos</DropdownMenuItem>
             <DropdownMenuItem>Preferências</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
