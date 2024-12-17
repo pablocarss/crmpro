@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Plus, GripVertical } from "lucide-react";
+import { DragDropContext } from "@hello-pangea/dnd";
+import { Plus } from "lucide-react";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Input } from "./ui/input";
-import { useToast } from "./ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { CreateFunnelForm } from "./CreateFunnelForm";
 import { CreateClientForm } from "./CreateClientForm";
+import { useToast } from "./ui/use-toast";
+import { FunnelStage } from "./FunnelStage";
 
 interface Client {
   id: string;
@@ -69,8 +68,23 @@ export function FunnelBoard() {
     });
   };
 
-  const calculateStageTotal = (clients: Client[]) => {
-    return clients.reduce((sum, client) => sum + client.value, 0);
+  const handleClientUpdate = (clientId: string, updatedData: Partial<Client>) => {
+    const newFunnels = [...funnels];
+    const currentFunnel = newFunnels.find((f) => f.id === activeFunnel);
+    if (!currentFunnel) return;
+
+    currentFunnel.stages.forEach((stage) => {
+      const clientIndex = stage.clients.findIndex((c) => c.id === clientId);
+      if (clientIndex !== -1) {
+        stage.clients[clientIndex] = { ...stage.clients[clientIndex], ...updatedData };
+      }
+    });
+
+    setFunnels(newFunnels);
+    toast({
+      title: "Cliente atualizado",
+      description: "As informações do cliente foram atualizadas com sucesso!",
+    });
   };
 
   return (
@@ -137,62 +151,15 @@ export function FunnelBoard() {
         <div className="grid grid-cols-4 gap-4">
           {funnels
             .find((f) => f.id === activeFunnel)
-            ?.stages.map((stage, stageIndex) => (
-              <Droppable key={stage.id} droppableId={stageIndex.toString()}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="bg-muted rounded-lg p-4 min-h-[500px]"
-                  >
-                    <div className="mb-4">
-                      <h3 className="font-semibold text-lg">{stage.name}</h3>
-                      <div className="text-sm text-muted-foreground">
-                        Total: R$ {calculateStageTotal(stage.clients).toLocaleString()}
-                      </div>
-                    </div>
-                    {stage.clients.map((client, index) => (
-                      <Draggable
-                        key={client.id}
-                        draggableId={client.id}
-                        index={index}
-                      >
-                        {(provided) => (
-                          <Card
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className="mb-2"
-                          >
-                            <CardHeader className="p-3">
-                              <div
-                                {...provided.dragHandleProps}
-                                className="absolute right-2 top-2 text-gray-400"
-                              >
-                                <GripVertical className="h-4 w-4" />
-                              </div>
-                              <CardTitle className="text-sm font-medium">
-                                {client.name}
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-3 pt-0">
-                              <div className="text-sm text-muted-foreground">
-                                {client.email}
-                              </div>
-                              <div className="text-sm font-semibold mt-1">
-                                R$ {client.value.toLocaleString()}
-                              </div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {client.product}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
+            ?.stages.map((stage, index) => (
+              <FunnelStage
+                key={stage.id}
+                id={stage.id}
+                index={index}
+                name={stage.name}
+                clients={stage.clients}
+                onClientUpdate={handleClientUpdate}
+              />
             ))}
         </div>
       </DragDropContext>
