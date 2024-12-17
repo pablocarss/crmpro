@@ -10,6 +10,7 @@ interface Client {
   email: string;
   value: number;
   product: string;
+  stageId: string;
 }
 
 interface Product {
@@ -18,17 +19,24 @@ interface Product {
   value: number;
 }
 
+interface Stage {
+  id: string;
+  name: string;
+}
+
 interface CreateClientFormProps {
   onSubmit: (client: Client) => void;
   products: Product[];
+  stages: Stage[];
 }
 
-export function CreateClientForm({ onSubmit, products }: CreateClientFormProps) {
+export function CreateClientForm({ onSubmit, products, stages }: CreateClientFormProps) {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     value: "",
     product: "",
+    stageId: "",
   });
 
   const handleProductSelect = (productId: string) => {
@@ -50,6 +58,7 @@ export function CreateClientForm({ onSubmit, products }: CreateClientFormProps) 
       email: formData.email,
       value: parseFloat(formData.value),
       product: formData.product,
+      stageId: formData.stageId,
     });
   };
 
@@ -84,6 +93,21 @@ export function CreateClientForm({ onSubmit, products }: CreateClientFormProps) 
             {products.map((product) => (
               <SelectItem key={product.id} value={product.id}>
                 {product.name} - R$ {product.value}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="stage">Estágio</Label>
+        <Select onValueChange={(value) => setFormData({ ...formData, stageId: value })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione um estágio" />
+          </SelectTrigger>
+          <SelectContent>
+            {stages.map((stage) => (
+              <SelectItem key={stage.id} value={stage.id}>
+                {stage.name}
               </SelectItem>
             ))}
           </SelectContent>

@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
-import { Plus } from "lucide-react";
-import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { CreateFunnelForm } from "./CreateFunnelForm";
-import { CreateClientForm } from "./CreateClientForm";
 import { useToast } from "./ui/use-toast";
 import { FunnelStage } from "./FunnelStage";
 import { StageUpdateForm } from "./StageUpdateForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { FunnelControls } from "./FunnelControls";
 
 interface Client {
   id: string;
@@ -15,6 +12,7 @@ interface Client {
   email: string;
   value: number;
   product: string;
+  stageId?: string;
 }
 
 interface Stage {
@@ -54,7 +52,6 @@ export function FunnelBoard() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [pendingMove, setPendingMove] = useState<any>(null);
 
-  // Simulação de produtos
   const [products] = useState<Product[]>([
     { id: "p1", name: "Produto Basic", value: 99.90 },
     { id: "p2", name: "Produto Pro", value: 199.90 },
@@ -67,6 +64,13 @@ export function FunnelBoard() {
     const { source, destination } = result;
     
     if (source.droppableId !== destination.droppableId) {
+      const currentFunnel = funnels.find((f) => f.id === activeFunnel);
+      if (!currentFunnel) return;
+      
+      const sourceStage = currentFunnel.stages[parseInt(source.droppableId)];
+      const client = sourceStage.clients[source.index];
+      
+      setSelectedClient(client);
       setShowUpdateForm(true);
       setPendingMove(result);
       return;
@@ -124,68 +128,30 @@ export function FunnelBoard() {
     });
   };
 
+  const handleCreateClient = (newClient: Client) => {
+    const newFunnels = [...funnels];
+    const funnelIndex = newFunnels.findIndex((f) => f.id === activeFunnel);
+    const stageIndex = newClient.stageId 
+      ? newFunnels[funnelIndex].stages.findIndex(s => s.id === newClient.stageId)
+      : 0;
+    
+    newFunnels[funnelIndex].stages[stageIndex].clients.push(newClient);
+    setFunnels(newFunnels);
+  };
+
+  const currentFunnel = funnels.find((f) => f.id === activeFunnel);
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="space-x-4">
-          {funnels.map((funnel) => (
-            <Button
-              key={funnel.id}
-              variant={activeFunnel === funnel.id ? "default" : "outline"}
-              onClick={() => setActiveFunnel(funnel.id)}
-              className="bg-gradient-to-r from-purple-600 to-black"
-            >
-              {funnel.name}
-            </Button>
-          ))}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Funil
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Criar Novo Funil</DialogTitle>
-              </DialogHeader>
-              <CreateFunnelForm onSubmit={(newFunnel) => {
-                setFunnels([...funnels, newFunnel]);
-                toast({
-                  title: "Funil criado",
-                  description: `${newFunnel.name} foi criado com sucesso!`,
-                });
-              }} />
-            </DialogContent>
-          </Dialog>
-        </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-purple-600 to-black">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Cliente
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar Novo Cliente</DialogTitle>
-            </DialogHeader>
-            <CreateClientForm 
-              products={products}
-              onSubmit={(newClient) => {
-                const newFunnels = [...funnels];
-                const funnelIndex = newFunnels.findIndex((f) => f.id === activeFunnel);
-                newFunnels[funnelIndex].stages[0].clients.push(newClient);
-                setFunnels(newFunnels);
-                toast({
-                  title: "Cliente adicionado",
-                  description: `${newClient.name} foi adicionado ao funil!`,
-                });
-              }} 
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
+      <FunnelControls
+        funnels={funnels}
+        activeFunnel={activeFunnel}
+        setActiveFunnel={setActiveFunnel}
+        onCreateFunnel={(newFunnel) => setFunnels([...funnels, newFunnel])}
+        onCreateClient={handleCreateClient}
+        products={products}
+        stages={currentFunnel?.stages || []}
+      />
 
       <Dialog open={showUpdateForm} onOpenChange={setShowUpdateForm}>
         <DialogContent>
@@ -203,18 +169,16 @@ export function FunnelBoard() {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-4 gap-4">
-          {funnels
-            .find((f) => f.id === activeFunnel)
-            ?.stages.map((stage, index) => (
-              <FunnelStage
-                key={stage.id}
-                id={stage.id}
-                index={index}
-                name={stage.name}
-                clients={stage.clients}
-                onClientUpdate={handleClientUpdate}
-              />
-            ))}
+          {currentFunnel?.stages.map((stage, index) => (
+            <FunnelStage
+              key={stage.id}
+              id={stage.id}
+              index={index}
+              name={stage.name}
+              clients={stage.clients}
+              onClientUpdate={handleClientUpdate}
+            />
+          ))}
         </div>
       </DragDropContext>
     </div>
