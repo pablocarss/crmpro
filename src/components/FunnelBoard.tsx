@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { DragDropContext } from "@hello-pangea/dnd";
+import { DragDropContext, DropResult } from "react-beautiful-dnd";
 import { useToast } from "./ui/use-toast";
 import { FunnelStage } from "./FunnelStage";
-import { StageUpdateForm } from "./StageUpdateForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { FunnelControls } from "./FunnelControls";
+import { StageChangeReasonModal } from "./StageChangeReasonModal";
 
 interface Client {
   id: string;
@@ -12,7 +11,13 @@ interface Client {
   email: string;
   value: number;
   product: string;
-  stageId?: string;
+  observation?: string;
+  stageHistory?: Array<{
+    fromStage: string;
+    toStage: string;
+    reason: string;
+    date: string;
+  }>;
 }
 
 interface Stage {
@@ -48,50 +53,174 @@ export function FunnelBoard() {
     },
   ]);
   const [activeFunnel, setActiveFunnel] = useState<string>("1");
-  const [showUpdateForm, setShowUpdateForm] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [pendingMove, setPendingMove] = useState<{
+    sourceStage: Stage;
+    destStage: Stage;
+    client: Client;
+    sourceIndex: number;
+    destIndex: number;
+  } | null>(null);
+  const [showReasonModal, setShowReasonModal] = useState(false);
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-
+  const onDragEnd = (result: DropResult) => {
     const { source, destination } = result;
-    const currentFunnel = funnels.find((f) => f.id === activeFunnel);
+
+    // Se não houver destino válido, não fazer nada
+    if (!destination) return;
+
+    const currentFunnel = funnels.find(f => f.id === activeFunnel);
     if (!currentFunnel) return;
 
-    const newFunnels = [...funnels];
-    const funnelIndex = newFunnels.findIndex((f) => f.id === activeFunnel);
-    const sourceStage = currentFunnel.stages[parseInt(source.droppableId)];
-    const destStage = currentFunnel.stages[parseInt(destination.droppableId)];
+    const sourceStage = currentFunnel.stages.find(s => s.id === source.droppableId);
+    const destStage = currentFunnel.stages.find(s => s.id === destination.droppableId);
 
-    const [movedClient] = sourceStage.clients.splice(source.index, 1);
-    destStage.clients.splice(destination.index, 0, movedClient);
+    if (!sourceStage || !destStage) return;
 
-    newFunnels[funnelIndex] = currentFunnel;
+    if (source.droppableId === destination.droppableId) {
+      // Movimento dentro do mesmo estágio
+      const newClients = Array.from(sourceStage.clients);
+      const [movedClient] = newClients.splice(source.index, 1);
+      newClients.splice(destination.index, 0, movedClient);
+
+      const newFunnels = funnels.map(funnel => {
+        if (funnel.id === activeFunnel) {
+          return {
+            ...funnel,
+            stages: funnel.stages.map(stage => {
+              if (stage.id === sourceStage.id) {
+                return { ...stage, clients: newClients };
+              }
+              return stage;
+            }),
+          };
+        }
+        return funnel;
+      });
+
+      setFunnels(newFunnels);
+    } else {
+      // Movimento entre estágios diferentes
+      const client = sourceStage.clients[source.index];
+      setPendingMove({
+        sourceStage,
+        destStage,
+        client,
+        sourceIndex: source.index,
+        destIndex: destination.index,
+      });
+      setShowReasonModal(true);
+    }
+  };
+
+  const handleStageChangeConfirm = (reason: string) => {
+    if (!pendingMove) return;
+
+    const { sourceStage, destStage, client, sourceIndex, destIndex } = pendingMove;
+    const newFunnels = funnels.map(funnel => {
+      if (funnel.id === activeFunnel) {
+        return {
+          ...funnel,
+          stages: funnel.stages.map(stage => {
+            if (stage.id === sourceStage.id) {
+              // Remover do estágio de origem
+              const newClients = [...stage.clients];
+              newClients.splice(sourceIndex, 1);
+              return { ...stage, clients: newClients };
+            }
+            if (stage.id === destStage.id) {
+              // Adicionar ao estágio de destino
+              const newClients = [...stage.clients];
+              const movedClient = {
+                ...client,
+                stageHistory: [
+                  ...(client.stageHistory || []),
+                  {
+                    fromStage: sourceStage.name,
+                    toStage: destStage.name,
+                    reason,
+                    date: new Date().toISOString(),
+                  },
+                ],
+              };
+              newClients.splice(destIndex, 0, movedClient);
+              return { ...stage, clients: newClients };
+            }
+            return stage;
+          }),
+        };
+      }
+      return funnel;
+    });
+
     setFunnels(newFunnels);
-    
+    setShowReasonModal(false);
+    setPendingMove(null);
+
     toast({
       title: "Cliente movido",
-      description: `${movedClient.name} movido para ${destStage.name}`,
+      description: `${client.name} foi movido para ${destStage.name}`,
     });
   };
 
-  const handleClientUpdate = (clientId: string, updatedData: Partial<Client>) => {
-    const newFunnels = [...funnels];
-    const currentFunnel = newFunnels.find((f) => f.id === activeFunnel);
-    if (!currentFunnel) return;
+  const handleClientUpdate = (clientId: string, updatedData: Partial<Client>, newStageId?: string) => {
+    const newFunnels = funnels.map(funnel => {
+      if (funnel.id === activeFunnel) {
+        return {
+          ...funnel,
+          stages: funnel.stages.map(stage => {
+            const clientIndex = stage.clients.findIndex(c => c.id === clientId);
+            if (clientIndex === -1) return stage;
 
-    currentFunnel.stages.forEach((stage) => {
-      const clientIndex = stage.clients.findIndex((c) => c.id === clientId);
-      if (clientIndex !== -1) {
-        stage.clients[clientIndex] = { ...stage.clients[clientIndex], ...updatedData };
+            if (newStageId && newStageId !== stage.id) {
+              // Se houver mudança de estágio
+              const newClients = [...stage.clients];
+              newClients.splice(clientIndex, 1);
+              return { ...stage, clients: newClients };
+            }
+
+            // Atualizar o cliente no estágio atual
+            const newClients = [...stage.clients];
+            newClients[clientIndex] = { ...newClients[clientIndex], ...updatedData };
+            return { ...stage, clients: newClients };
+          }),
+        };
       }
+      return funnel;
     });
 
+    // Se houver mudança de estágio, adicionar o cliente ao novo estágio
+    if (newStageId) {
+      const currentFunnel = newFunnels.find(f => f.id === activeFunnel);
+      if (currentFunnel) {
+        const targetStage = currentFunnel.stages.find(s => s.id === newStageId);
+        const sourceStage = currentFunnel.stages.find(s => 
+          s.clients.some(c => c.id === clientId)
+        );
+        
+        if (targetStage && sourceStage) {
+          const client = sourceStage.clients.find(c => c.id === clientId);
+          if (client) {
+            const updatedClient = {
+              ...client,
+              ...updatedData,
+              stageHistory: [
+                ...(client.stageHistory || []),
+                {
+                  fromStage: sourceStage.name,
+                  toStage: targetStage.name,
+                  reason: "Movido através do modal de edição",
+                  date: new Date().toISOString(),
+                },
+              ],
+            };
+            targetStage.clients.push(updatedClient);
+          }
+        }
+      }
+    }
+
     setFunnels(newFunnels);
-    setShowUpdateForm(false);
-    setSelectedClient(null);
-    
     toast({
       title: "Cliente atualizado",
       description: "As informações do cliente foram atualizadas com sucesso!",
@@ -99,14 +228,29 @@ export function FunnelBoard() {
   };
 
   const handleCreateClient = (newClient: Client) => {
-    const newFunnels = [...funnels];
-    const funnelIndex = newFunnels.findIndex((f) => f.id === activeFunnel);
-    const stageIndex = newClient.stageId 
-      ? newFunnels[funnelIndex].stages.findIndex(s => s.id === newClient.stageId)
-      : 0;
-    
-    newFunnels[funnelIndex].stages[stageIndex].clients.push(newClient);
+    const newFunnels = funnels.map(funnel => {
+      if (funnel.id === activeFunnel) {
+        return {
+          ...funnel,
+          stages: funnel.stages.map((stage, index) => {
+            if (index === 0) {
+              return {
+                ...stage,
+                clients: [...stage.clients, newClient],
+              };
+            }
+            return stage;
+          }),
+        };
+      }
+      return funnel;
+    });
+
     setFunnels(newFunnels);
+    toast({
+      title: "Cliente criado",
+      description: "O novo cliente foi adicionado com sucesso!",
+    });
   };
 
   const handleCreateProduct = (product: Product) => {
@@ -132,29 +276,27 @@ export function FunnelBoard() {
         stages={currentFunnel?.stages || []}
       />
 
-      <Dialog open={showUpdateForm} onOpenChange={setShowUpdateForm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Atualizar Cliente</DialogTitle>
-          </DialogHeader>
-          {selectedClient && (
-            <StageUpdateForm
-              client={selectedClient}
-              onSubmit={(data) => handleClientUpdate(selectedClient.id, data)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {pendingMove && (
+        <StageChangeReasonModal
+          isOpen={showReasonModal}
+          onClose={() => {
+            setShowReasonModal(false);
+            setPendingMove(null);
+          }}
+          onConfirm={handleStageChangeConfirm}
+          fromStage={pendingMove.sourceStage.name}
+          toStage={pendingMove.destStage.name}
+        />
+      )}
 
-      <DragDropContext onDragEnd={handleDragEnd}>
+      <DragDropContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-4 gap-4">
-          {currentFunnel?.stages.map((stage, index) => (
+          {currentFunnel?.stages.map((stage) => (
             <FunnelStage
               key={stage.id}
-              id={stage.id}
-              index={index}
-              name={stage.name}
-              clients={stage.clients}
+              stage={stage}
+              stages={currentFunnel.stages}
+              products={products}
               onClientUpdate={handleClientUpdate}
             />
           ))}

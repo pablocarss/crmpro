@@ -1,8 +1,7 @@
-import { Droppable, Draggable } from "@hello-pangea/dnd";
+import { Droppable, Draggable } from "react-beautiful-dnd";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { GripVertical } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { StageUpdateForm } from "./StageUpdateForm";
+import { useState } from "react";
+import { ClientDrawer } from "./ClientDrawer";
 
 interface Client {
   id: string;
@@ -10,52 +9,97 @@ interface Client {
   email: string;
   value: number;
   product: string;
+  observation?: string;
+  stageHistory?: Array<{
+    fromStage: string;
+    toStage: string;
+    reason: string;
+    date: string;
+  }>;
+}
+
+interface Stage {
+  id: string;
+  name: string;
+  clients: Client[];
+}
+
+interface Product {
+  id: string;
+  name: string;
+  value: number;
 }
 
 interface StageProps {
-  id: string;
-  index: number;
-  name: string;
-  clients: Client[];
-  onClientUpdate: (clientId: string, updatedData: Partial<Client>) => void;
+  stage: Stage;
+  stages: Stage[];
+  products: Product[];
+  onClientUpdate: (clientId: string, updatedData: Partial<Client>, newStageId?: string) => void;
 }
 
-export function FunnelStage({ id, index, name, clients, onClientUpdate }: StageProps) {
+export function FunnelStage({ stage, stages, products, onClientUpdate }: StageProps) {
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  
   const calculateStageTotal = (clients: Client[]) => {
     return clients.reduce((sum, client) => sum + client.value, 0);
   };
 
+  const handleClientClick = (client: Client) => {
+    console.log('Card clicado:', client);
+    setSelectedClient(client);
+  };
+
+  const handleCloseDrawer = () => {
+    console.log('Fechando drawer');
+    setSelectedClient(null);
+  };
+
+  const handleSaveClient = (clientId: string, updatedData: Partial<Client>, newStageId?: string) => {
+    console.log('Salvando cliente:', clientId, updatedData, newStageId);
+    onClientUpdate(clientId, updatedData, newStageId);
+    setSelectedClient(null);
+  };
+
   return (
-    <Droppable droppableId={index.toString()}>
-      {(provided) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.droppableProps}
-          className="bg-muted rounded-lg p-4 min-h-[500px]"
-        >
-          <div className="mb-4">
-            <h3 className="font-semibold text-lg">{name}</h3>
-            <div className="text-sm text-muted-foreground">
-              Total: R$ {calculateStageTotal(clients).toLocaleString()}
+    <>
+      <Droppable droppableId={stage.id}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`bg-muted rounded-lg p-4 min-h-[500px] ${
+              snapshot.isDraggingOver ? 'bg-accent/20' : ''
+            }`}
+          >
+            <div className="mb-4">
+              <h3 className="font-semibold text-lg">{stage.name}</h3>
+              <div className="text-sm text-muted-foreground">
+                Total: R$ {calculateStageTotal(stage.clients).toLocaleString()}
+              </div>
             </div>
-          </div>
-          {clients.map((client, clientIndex) => (
-            <Draggable key={client.id} draggableId={client.id} index={clientIndex}>
-              {(provided) => (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Card
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className="mb-2 cursor-pointer hover:bg-accent/50 transition-colors"
+            
+            {stage.clients.map((client, index) => (
+              <Draggable 
+                key={client.id} 
+                draggableId={client.id} 
+                index={index}
+              >
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    className={`mb-2 ${snapshot.isDragging ? 'opacity-50' : ''}`}
+                  >
+                    <Card 
+                      className="cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleClientClick(client);
+                      }}
                     >
                       <CardHeader className="p-3">
-                        <div
-                          {...provided.dragHandleProps}
-                          className="absolute right-2 top-2 text-gray-400"
-                        >
-                          <GripVertical className="h-4 w-4" />
-                        </div>
                         <CardTitle className="text-sm font-medium">
                           {client.name}
                         </CardTitle>
@@ -72,23 +116,26 @@ export function FunnelStage({ id, index, name, clients, onClientUpdate }: StageP
                         </div>
                       </CardContent>
                     </Card>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Atualizar Cliente</DialogTitle>
-                    </DialogHeader>
-                    <StageUpdateForm
-                      client={client}
-                      onSubmit={(data) => onClientUpdate(client.id, data)}
-                    />
-                  </DialogContent>
-                </Dialog>
-              )}
-            </Draggable>
-          ))}
-          {provided.placeholder}
-        </div>
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+
+      {selectedClient && (
+        <ClientDrawer
+          isOpen={!!selectedClient}
+          onClose={handleCloseDrawer}
+          client={selectedClient}
+          currentStage={stage}
+          stages={stages}
+          products={products}
+          onSave={handleSaveClient}
+        />
       )}
-    </Droppable>
+    </>
   );
 }

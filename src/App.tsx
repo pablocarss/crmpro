@@ -7,8 +7,23 @@ import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import { Header } from "./components/Header";
+import { Navigation } from "./components/Navigation";
+import { ChatView } from "./components/ChatView";
 
 const queryClient = new QueryClient();
+
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="min-h-screen">
+      <Header />
+      <Navigation />
+      <main className="pl-14 pt-14">
+        {children}
+      </main>
+    </div>
+  );
+};
 
 const App = () => {
   // Simular verificação de autenticação
@@ -28,7 +43,21 @@ const App = () => {
               path="/"
               element={
                 isAuthenticated ? (
-                  <Index />
+                  <AppLayout>
+                    <Index />
+                  </AppLayout>
+                ) : (
+                  <Navigate to="/landing" replace />
+                )
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                isAuthenticated ? (
+                  <AppLayout>
+                    <ChatView />
+                  </AppLayout>
                 ) : (
                   <Navigate to="/landing" replace />
                 )
