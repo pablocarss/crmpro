@@ -130,18 +130,15 @@ export default function Integracoes() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="whatsapp">
-          <Card className="p-6 bg-[#1a1a2e] border-[#2a2a4a]">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <img src={whatsappLogo} alt="WhatsApp" className="h-12 w-12" />
-                <div>
-                  <h3 className="text-lg font-semibold">WhatsApp Business API</h3>
-                  <p className="text-sm text-gray-400">Conecte-se com seus clientes via WhatsApp</p>
-                </div>
-              </div>
+        <TabsContent value="whatsapp" className="space-y-4">
+          <div className="flex items-center gap-4">
+            <img src={whatsappLogo} alt="WhatsApp Logo" className="w-12 h-12" />
+            <div>
+              <h2 className="text-2xl font-bold">WhatsApp Business</h2>
+              <p className="text-gray-500">Configure a integração com WhatsApp Business API</p>
             </div>
-
+          </div>
+          <Card className="p-6 bg-[#1a1a2e] border-[#2a2a4a]">
             <IntegrationStatus configured={integrationService.isWhatsAppConfigured()} />
 
             <div className="space-y-4 mt-6">
@@ -193,18 +190,15 @@ export default function Integracoes() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="zapier">
-          <Card className="p-6 bg-[#1a1a2e] border-[#2a2a4a]">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <img src={zapierLogo} alt="Zapier" className="h-12 w-12" />
-                <div>
-                  <h3 className="text-lg font-semibold">Zapier</h3>
-                  <p className="text-sm text-gray-400">Automatize tarefas entre diferentes aplicativos</p>
-                </div>
-              </div>
+        <TabsContent value="zapier" className="space-y-4">
+          <div className="flex items-center gap-4">
+            <img src={zapierLogo} alt="Zapier Logo" className="w-12 h-12" />
+            <div>
+              <h2 className="text-2xl font-bold">Zapier</h2>
+              <p className="text-gray-500">Configure a integração com Zapier</p>
             </div>
-
+          </div>
+          <Card className="p-6 bg-[#1a1a2e] border-[#2a2a4a]">
             <IntegrationStatus configured={integrationService.isZapierConfigured()} />
 
             <div className="space-y-4 mt-6">
@@ -226,18 +220,15 @@ export default function Integracoes() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="zoom">
-          <Card className="p-6 bg-[#1a1a2e] border-[#2a2a4a]">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <img src={zoomLogo} alt="Zoom" className="h-12 w-12" />
-                <div>
-                  <h3 className="text-lg font-semibold">Zoom</h3>
-                  <p className="text-sm text-gray-400">Agende e gerencie reuniões diretamente do CRM</p>
-                </div>
-              </div>
+        <TabsContent value="zoom" className="space-y-4">
+          <div className="flex items-center gap-4">
+            <img src={zoomLogo} alt="Zoom Logo" className="w-12 h-12" />
+            <div>
+              <h2 className="text-2xl font-bold">Zoom</h2>
+              <p className="text-gray-500">Configure a integração com Zoom</p>
             </div>
-
+          </div>
+          <Card className="p-6 bg-[#1a1a2e] border-[#2a2a4a]">
             <IntegrationStatus configured={integrationService.isZoomConfigured()} />
 
             <div className="space-y-4 mt-6">

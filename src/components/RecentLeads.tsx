@@ -3,18 +3,28 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Phone, Mail, Plus, Building2, User } from 'lucide-react';
+import { Calendar, Phone, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { leadService, type Lead } from '@/services/leadService';
 
 interface Lead {
   id: string;
   name: string;
-  company: string;
-  email: string;
-  phone: string;
-  status: 'novo' | 'contatado' | 'qualificado' | 'negociacao' | 'fechado' | 'perdido';
+  phone?: string;
+  productId: string;
+  productName: string;
+  productPrice: number;
+  funnelId: string;
+  stageId: string;
   createdAt: string;
+  stageHistory: {
+    fromStage: string;
+    toStage: string;
+    reason: string;
+    date: string;
+  }[];
+  observation?: string;
 }
 
 export function RecentLeads() {
@@ -22,16 +32,36 @@ export function RecentLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
 
   useEffect(() => {
-    // Carregar leads do localStorage
-    const storedLeads = JSON.parse(localStorage.getItem('leads') || '[]');
+    // Carregar leads usando o leadService
+    const allLeads = leadService.getAll();
     // Ordenar por data de criação (mais recentes primeiro) e pegar os 5 primeiros
-    const sortedLeads = storedLeads
-      .sort((a: Lead, b: Lead) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    const sortedLeads = allLeads
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 5);
     setLeads(sortedLeads);
   }, []);
 
-  const getStatusColor = (status: Lead['status']) => {
+  const getStatusFromStage = (lead: Lead) => {
+    const currentStage = lead.stageId;
+    // Mapear o stageId para um status
+    switch (currentStage) {
+      case 'novo':
+        return { status: 'novo', text: 'Novo Lead' };
+      case 'contatado':
+        return { status: 'contatado', text: 'Contatado' };
+      case 'qualificado':
+        return { status: 'qualificado', text: 'Qualificado' };
+      case 'negociacao':
+        return { status: 'negociacao', text: 'Em Negociação' };
+      case 'fechado':
+        return { status: 'fechado', text: 'Fechado' };
+      default:
+        return { status: 'novo', text: 'Novo Lead' };
+    }
+  };
+
+  const getStatusColor = (lead: Lead) => {
+    const { status } = getStatusFromStage(lead);
     const colors = {
       novo: 'bg-blue-500/20 text-blue-500',
       contatado: 'bg-yellow-500/20 text-yellow-500',
@@ -40,19 +70,7 @@ export function RecentLeads() {
       fechado: 'bg-emerald-500/20 text-emerald-500',
       perdido: 'bg-red-500/20 text-red-500'
     };
-    return colors[status];
-  };
-
-  const getStatusText = (status: Lead['status']) => {
-    const statuses = {
-      novo: 'Novo Lead',
-      contatado: 'Contatado',
-      qualificado: 'Qualificado',
-      negociacao: 'Em Negociação',
-      fechado: 'Fechado',
-      perdido: 'Perdido'
-    };
-    return statuses[status];
+    return colors[status as keyof typeof colors];
   };
 
   return (
@@ -82,53 +100,36 @@ export function RecentLeads() {
         {leads.map((lead) => (
           <div
             key={lead.id}
-            className="flex items-start justify-between p-3 rounded-lg bg-[#2a2a4a]/50 hover:bg-[#2a2a4a] transition-colors cursor-pointer"
-            onClick={() => navigate('/funil')}
+            className="flex items-center justify-between p-4 bg-white rounded-lg shadow hover:bg-gray-50 cursor-pointer"
+            onClick={() => navigate(`/funil?lead=${lead.id}`)}
           >
-            <div className="space-y-2 w-full">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-full bg-purple-500/20 text-purple-500">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="font-medium">{lead.name}</span>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge className={getStatusColor(lead.status)}>
-                        {getStatusText(lead.status)}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-3">
+                <span className="text-lg font-semibold text-gray-900 truncate">
+                  {lead.name}
+                </span>
+                <Badge className={getStatusColor(lead)}>
+                  {getStatusFromStage(lead).text}
+                </Badge>
               </div>
-              
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-400">
-                <div className="flex items-center gap-1">
-                  <Building2 className="w-4 h-4" />
-                  <span>{lead.company}</span>
+              <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                {lead.phone && (
+                  <div className="flex items-center">
+                    <Phone className="h-4 w-4 mr-1" />
+                    {lead.phone}
+                  </div>
+                )}
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  {format(new Date(lead.createdAt), "d 'de' MMMM", { locale: ptBR })}
                 </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>{format(new Date(lead.createdAt), "dd/MM/yyyy", { locale: ptBR })}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Mail className="w-4 h-4" />
-                  <span>{lead.email}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Phone className="w-4 h-4" />
-                  <span>{lead.phone}</span>
+                <div className="flex items-center">
+                  <span className="font-medium">R$ {lead.productPrice.toLocaleString('pt-BR')}</span>
                 </div>
               </div>
             </div>
           </div>
         ))}
-
-        {leads.length === 0 && (
-          <div className="text-center py-4 text-gray-400">
-            Nenhum lead cadastrado
-          </div>
-        )}
       </div>
     </Card>
   );

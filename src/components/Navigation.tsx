@@ -19,6 +19,7 @@ import {
   History
 } from 'lucide-react';
 import { Button } from './ui/button';
+import logoDark from '/logo-dark.svg';
 import { useState } from 'react';
 
 export function Navigation() {
@@ -123,7 +124,21 @@ export function Navigation() {
         )}
       </button>
 
-      <div
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={cn(
+          'fixed top-4 left-24 z-50 rounded-lg p-2 text-gray-400 hover:bg-[#2a2a4a] hover:text-white',
+          isExpanded && 'left-64'
+        )}
+      >
+        {isExpanded ? (
+          <X className="h-6 w-6" />
+        ) : (
+          <Menu className="h-6 w-6" />
+        )}
+      </button>
+
+      <nav
         className={cn(
           'fixed inset-y-0 z-40 flex flex-col bg-[#1a1a2e] transition-all duration-300',
           isExpanded ? 'w-64' : 'w-20',
@@ -137,19 +152,24 @@ export function Navigation() {
         }}
       >
         <div className="flex h-16 shrink-0 items-center justify-center px-4">
-          {isExpanded ? (
+          <div className="flex items-center gap-3">
             <img
-              className="h-8 w-auto"
-              src="/logo.svg"
-              alt="CRM PRO+"
-            />
-          ) : (
-            <img
-              className="h-10 w-10"
               src="/favicon.svg"
-              alt="CRM PRO+"
+              alt="Logo"
+              className={cn(
+                "transition-all duration-300",
+                isExpanded ? "h-8 w-8" : "h-10 w-10"
+              )}
             />
-          )}
+            <span 
+              className={cn(
+                "text-xl font-bold bg-gradient-to-r from-purple-500 to-purple-300 bg-clip-text text-transparent whitespace-nowrap transition-all duration-300",
+                !isExpanded && "opacity-0 w-0 overflow-hidden"
+              )}
+            >
+              CRM PRO+
+            </span>
+          </div>
         </div>
         <nav className="flex-1 space-y-1 px-2 py-4">
           {navigation.map((item) =>
@@ -159,9 +179,9 @@ export function Navigation() {
                 to={item.href}
                 className={cn(
                   item.current
-                    ? 'bg-[#2a2a4a] text-white'
+                    ? 'bg-purple-500/20 text-purple-500'
                     : 'text-gray-400 hover:bg-[#2a2a4a] hover:text-white',
-                  'group flex items-center rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap overflow-hidden',
+                  'group flex items-center rounded-lg px-3 py-2 transition-colors',
                   !isExpanded && 'justify-center'
                 )}
                 title={!isExpanded ? item.name : undefined}
@@ -169,7 +189,7 @@ export function Navigation() {
                 <item.icon
                   className={cn(
                     item.current
-                      ? 'text-white'
+                      ? 'text-purple-500'
                       : 'text-gray-400 group-hover:text-white',
                     'h-5 w-5 shrink-0',
                     isExpanded && 'mr-3'
@@ -183,9 +203,9 @@ export function Navigation() {
                   onClick={() => isExpanded && setIsCadastrosOpen(!isCadastrosOpen)}
                   className={cn(
                     item.current
-                      ? 'bg-[#2a2a4a] text-white'
+                      ? 'bg-purple-500/20 text-purple-500'
                       : 'text-gray-400 hover:bg-[#2a2a4a] hover:text-white',
-                    'group flex w-full items-center rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap overflow-hidden',
+                    'group flex w-full items-center rounded-lg px-3 py-2 transition-colors',
                     !isExpanded && 'justify-center'
                   )}
                   title={!isExpanded ? item.name : undefined}
@@ -193,7 +213,7 @@ export function Navigation() {
                   <item.icon
                     className={cn(
                       item.current
-                        ? 'text-white'
+                        ? 'text-purple-500'
                         : 'text-gray-400 group-hover:text-white',
                       'h-5 w-5 shrink-0',
                       isExpanded && 'mr-3'
@@ -218,15 +238,15 @@ export function Navigation() {
                         to={subitem.href}
                         className={cn(
                           subitem.current
-                            ? 'bg-[#2a2a4a] text-white'
+                            ? 'bg-purple-500/20 text-purple-500'
                             : 'text-gray-400 hover:bg-[#2a2a4a] hover:text-white',
-                          'group flex items-center rounded-md px-3 py-2 text-sm font-medium'
+                          'group flex items-center rounded-lg px-3 py-2 transition-colors'
                         )}
                       >
                         <subitem.icon
                           className={cn(
                             subitem.current
-                              ? 'text-white'
+                              ? 'text-purple-500'
                               : 'text-gray-400 group-hover:text-white',
                             'mr-3 h-4 w-4 shrink-0'
                           )}
@@ -258,7 +278,7 @@ export function Navigation() {
             </div>
           )}
         </div>
-      </div>
+      </nav>
     </>
   );
 }
