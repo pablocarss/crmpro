@@ -142,48 +142,63 @@ export default function Integracoes() {
             <IntegrationStatus configured={integrationService.isWhatsAppConfigured()} />
 
             <div className="space-y-4 mt-6">
-              <div>
-                <Label htmlFor="whatsapp-token">Token do WhatsApp Business</Label>
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumberId">Phone Number ID</Label>
                 <Input
-                  id="whatsapp-token"
-                  type="password"
-                  value={whatsappConfig.token}
-                  onChange={(e) => setWhatsappConfig({...whatsappConfig, token: e.target.value})}
-                  placeholder="Digite o token do WhatsApp Business..."
-                  className="bg-[#1a1a2e] border-[#2a2a4a]"
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone-number-id">Phone Number ID</Label>
-                <Input
-                  id="phone-number-id"
+                  id="phoneNumberId"
                   value={whatsappConfig.phoneNumberId}
-                  onChange={(e) => setWhatsappConfig({...whatsappConfig, phoneNumberId: e.target.value})}
-                  placeholder="Digite o ID do número do WhatsApp..."
-                  className="bg-[#1a1a2e] border-[#2a2a4a]"
+                  onChange={(e) => setWhatsappConfig({ ...whatsappConfig, phoneNumberId: e.target.value })}
+                  placeholder="Ex: 521357897723282"
                 />
               </div>
-              <div>
-                <Label htmlFor="verify-token">Token de Verificação</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="token">Token de Acesso</Label>
                 <Input
-                  id="verify-token"
-                  value={whatsappConfig.verifyToken}
-                  onChange={(e) => setWhatsappConfig({...whatsappConfig, verifyToken: e.target.value})}
-                  placeholder="Token para verificação do webhook..."
-                  className="bg-[#1a1a2e] border-[#2a2a4a]"
+                  id="token"
+                  value={whatsappConfig.token}
+                  onChange={(e) => setWhatsappConfig({ ...whatsappConfig, token: e.target.value })}
+                  type="password"
+                  placeholder="Seu token de acesso do WhatsApp"
                 />
               </div>
-              <div>
-                <Label htmlFor="webhook-url">URL do Webhook</Label>
+
+              <div className="space-y-2">
+                <Label htmlFor="webhookUrl">URL do Webhook</Label>
                 <Input
-                  id="webhook-url"
+                  id="webhookUrl"
                   value={whatsappConfig.webhookUrl}
-                  onChange={(e) => setWhatsappConfig({...whatsappConfig, webhookUrl: e.target.value})}
-                  placeholder="URL para receber notificações..."
-                  className="bg-[#1a1a2e] border-[#2a2a4a]"
+                  onChange={(e) => setWhatsappConfig({ ...whatsappConfig, webhookUrl: e.target.value })}
+                  placeholder="https://seu-dominio.com/api/whatsapp/webhook"
                 />
+                <p className="text-sm text-muted-foreground">
+                  URL para receber notificações do WhatsApp
+                </p>
               </div>
-              <Button onClick={handleWhatsAppSave} className="bg-[#25D366] hover:bg-[#128C7E]">
+
+              <div className="space-y-2">
+                <Label htmlFor="verifyToken">Token de Verificação do Webhook</Label>
+                <Input
+                  id="verifyToken"
+                  value={whatsappConfig.verifyToken}
+                  onChange={(e) => setWhatsappConfig({ ...whatsappConfig, verifyToken: e.target.value })}
+                  placeholder="Token para verificar webhooks"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Token usado para verificar as requisições do webhook
+                </p>
+              </div>
+
+              <Button 
+                onClick={() => {
+                  integrationService.setWhatsAppConfig(whatsappConfig);
+                  toast({
+                    title: "Configuração salva",
+                    description: "Configuração do WhatsApp foi salva com sucesso!",
+                  });
+                }}
+                className="w-full"
+              >
                 Salvar Configuração
               </Button>
             </div>

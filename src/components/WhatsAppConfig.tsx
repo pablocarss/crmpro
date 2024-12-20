@@ -11,45 +11,50 @@ import {
 } from "./ui/card";
 import { useToast } from "./ui/use-toast";
 import { Loader2 } from "lucide-react";
+import { integrationService } from "@/services/integrationService";
+import { useNavigate } from "react-router-dom";
 
-interface WhatsAppConfigProps {
-  onSave: (config: WhatsAppSettings) => Promise<void>;
-  initialConfig?: WhatsAppSettings;
-}
-
-export interface WhatsAppSettings {
-  phoneNumberId: string;
-  accessToken: string;
-  verifyToken: string;
-  webhookUrl: string;
-  businessAccountId: string;
-}
-
-export function WhatsAppConfig({ onSave, initialConfig }: WhatsAppConfigProps) {
+export function WhatsAppConfig() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [config, setConfig] = useState<WhatsAppSettings>(
-    initialConfig || {
-      phoneNumberId: "",
-      accessToken: "",
-      verifyToken: "",
-      webhookUrl: "",
-      businessAccountId: "",
-    }
-  );
+  const [config, setConfig] = useState(() => {
+    const savedConfig = integrationService.getWhatsAppConfig();
+    return savedConfig || {
+      token: "EAANiKRqhzOsBO0XFqY6jf7ZBQ7QjgwhBcr4FpwDYMiH5WBRV6sHdg1jXZAxbayZCvo4mvTs5W8OsF1Emqaj5DZBXORqpjNRQ0IvAMlZB2sD0covdm6FoRKoZBxX80vHsQu6EsMcQXt743w1LxiVvtJp8aMmSQp1spn4lIOyJZBFeGscmjrkk3jUtOdlTVycRGMyQLNev5WZB3wZB",
+      phoneNumberId: "521357897723282",
+      verifyToken: "crmpro_verify_123456",
+      webhookUrl: `${window.location.protocol}//${window.location.host}/api/whatsapp/webhook`
+    };
+  });
 
   const handleSave = async () => {
     try {
       setLoading(true);
-      await onSave(config);
+
+      // Limpa o token antes de salvar
+      const cleanConfig = {
+        ...config,
+        token: config.token.trim(),
+        phoneNumberId: config.phoneNumberId.trim(),
+        verifyToken: config.verifyToken.trim(),
+        webhookUrl: config.webhookUrl.trim()
+      };
+      
+      // Salva no localStorage
+      integrationService.saveWhatsAppConfig(cleanConfig);
+      
       toast({
         title: "Configurações salvas",
         description: "As configurações do WhatsApp foram salvas com sucesso!",
       });
+
+      // Redireciona para a página do WhatsApp
+      navigate('/whatsapp');
     } catch (error) {
       toast({
         title: "Erro",
-        description: "Não foi possível salvar as configurações.",
+        description: "Erro ao salvar as configurações do WhatsApp",
         variant: "destructive",
       });
     } finally {
@@ -58,108 +63,75 @@ export function WhatsAppConfig({ onSave, initialConfig }: WhatsAppConfigProps) {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Configuração do WhatsApp Business</CardTitle>
+    <Card>
+      <CardHeader>
+        <CardTitle>Configuração do WhatsApp Business</CardTitle>
         <CardDescription>
-          Configure suas credenciais do WhatsApp Business API para começar a enviar
-          e receber mensagens.
+          Configure a integração com WhatsApp Business API
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="businessAccountId">ID da Conta Business</Label>
-              <Input
-                id="businessAccountId"
-                placeholder="Exemplo: 123456789"
-                value={config.businessAccountId}
-                onChange={(e) =>
-                  setConfig({ ...config, businessAccountId: e.target.value })
-                }
-                className="h-9"
-              />
-              <p className="text-xs text-muted-foreground">
-                Encontre este ID no Facebook Business Manager
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumberId">ID do Número de Telefone</Label>
-              <Input
-                id="phoneNumberId"
-                placeholder="Exemplo: 123456789"
-                value={config.phoneNumberId}
-                onChange={(e) =>
-                  setConfig({ ...config, phoneNumberId: e.target.value })
-                }
-                className="h-9"
-              />
-              <p className="text-xs text-muted-foreground">
-                ID do seu número do WhatsApp Business
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="accessToken">Token de Acesso Permanente</Label>
-            <Input
-              id="accessToken"
-              type="password"
-              placeholder="Seu token de acesso do WhatsApp Business API"
-              value={config.accessToken}
-              onChange={(e) =>
-                setConfig({ ...config, accessToken: e.target.value })
-              }
-              className="h-9"
-            />
-            <p className="text-xs text-muted-foreground">
-              Gere este token no Facebook Business Manager
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="verifyToken">Token de Verificação</Label>
-              <Input
-                id="verifyToken"
-                placeholder="Token para webhook"
-                value={config.verifyToken}
-                onChange={(e) =>
-                  setConfig({ ...config, verifyToken: e.target.value })
-                }
-                className="h-9"
-              />
-              <p className="text-xs text-muted-foreground">
-                Token para validar chamadas do webhook
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="webhookUrl">URL do Webhook</Label>
-              <Input
-                id="webhookUrl"
-                placeholder="https://seu-dominio.com/webhook"
-                value={config.webhookUrl}
-                onChange={(e) =>
-                  setConfig({ ...config, webhookUrl: e.target.value })
-                }
-                className="h-9"
-              />
-              <p className="text-xs text-muted-foreground">
-                URL para receber notificações
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-end pt-4">
-            <Button onClick={handleSave} disabled={loading} className="w-[200px]">
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Configurações
-            </Button>
-          </div>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="token">Token do WhatsApp Business</Label>
+          <Input
+            id="token"
+            type="password"
+            value={config.token}
+            onChange={(e) =>
+              setConfig({ ...config, token: e.target.value })
+            }
+          />
+          <p className="text-sm text-muted-foreground">
+            Token de acesso do WhatsApp Business API. Certifique-se de copiar o token completo.
+          </p>
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="phoneNumberId">Phone Number ID</Label>
+          <Input
+            id="phoneNumberId"
+            value={config.phoneNumberId}
+            onChange={(e) =>
+              setConfig({ ...config, phoneNumberId: e.target.value })
+            }
+          />
+          <p className="text-sm text-muted-foreground">
+            ID do número do WhatsApp Business. Encontrado no painel do Meta Business.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="verifyToken">Token de Verificação</Label>
+          <Input
+            id="verifyToken"
+            value={config.verifyToken}
+            onChange={(e) =>
+              setConfig({ ...config, verifyToken: e.target.value })
+            }
+          />
+          <p className="text-sm text-muted-foreground">
+            Token para verificar chamadas do webhook.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="webhookUrl">URL do Webhook</Label>
+          <Input
+            id="webhookUrl"
+            value={config.webhookUrl}
+            onChange={(e) =>
+              setConfig({ ...config, webhookUrl: e.target.value })
+            }
+          />
+          <p className="text-sm text-muted-foreground">
+            URL para receber notificações do WhatsApp.
+          </p>
+        </div>
+        <Button
+          className="w-full"
+          onClick={handleSave}
+          disabled={loading}
+        >
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Salvar Configuração
+        </Button>
       </CardContent>
     </Card>
   );

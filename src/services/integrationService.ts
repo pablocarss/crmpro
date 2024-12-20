@@ -23,15 +23,31 @@ export interface ZoomConfig {
 
 class IntegrationService {
   private WHATSAPP_CONFIG_KEY = 'whatsapp_config';
+  private DEFAULT_WHATSAPP_CONFIG = {
+    phoneNumberId: '521357897723282',
+    token: 'EAAM3tc5i0N4BO7BITv10FMxEA7FpAZABdw0sQ3Cqvht0U5N1JucujqZBB0i3y184rOgTk0FQKs1X8fTFxNQjdZCL0zWPpLHLZAGhpcW1YhEZB96PscTYk0KWwxfuWXskqOCmC6uEZAEmhWl1ki9YoUCXy0PupyEzSZAm1f7aFNGxYHnJtJ9ZCh0UCEtHZB8rgtJDBuofNApqXENXvslZBqKZAcED7RVxPsvEhnDdoFptwvhcCsZD',
+    verifyToken: 'your_verify_token',
+    webhookUrl: 'your_webhook_url'
+  };
   private ZAPIER_CONFIG_KEY = 'zapier_config';
   private ZOOM_CONFIG_KEY = 'zoom_config';
 
   // WhatsApp
-  saveWhatsAppConfig(config: WhatsAppConfig): void {
+  setWhatsAppConfig(config: {
+    token: string;
+    phoneNumberId: string;
+    verifyToken?: string;
+    webhookUrl?: string;
+  }) {
     localStorage.setItem(this.WHATSAPP_CONFIG_KEY, JSON.stringify(config));
   }
 
-  getWhatsAppConfig(): WhatsAppConfig | null {
+  getWhatsAppConfig(): {
+    token: string;
+    phoneNumberId: string;
+    verifyToken?: string;
+    webhookUrl?: string;
+  } | null {
     const config = localStorage.getItem(this.WHATSAPP_CONFIG_KEY);
     return config ? JSON.parse(config) : null;
   }
