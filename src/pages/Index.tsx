@@ -6,10 +6,11 @@ import { activityService } from "@/services/activityService";
 import { leadService } from "@/services/leadService";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Users, Activity, TrendingUp, DollarSign } from 'lucide-react';
+import { Users, Activity, TrendingUp, DollarSign, Coffee } from 'lucide-react';
 
 export default function Index() {
   const navigate = useNavigate();
+  const [userName, setUserName] = useState('');
   const [metrics, setMetrics] = useState({
     totalLeads: 0,
     totalActivities: 0,
@@ -25,6 +26,10 @@ export default function Index() {
   const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
+    // Carregar nome do usuário
+    const storedName = localStorage.getItem('userName');
+    setUserName(storedName || 'Visitante');
+
     // Atualizar métricas
     const activities = activityService.getActivities();
     const leads = leadService.getAll();
@@ -89,8 +94,15 @@ export default function Index() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+      <div className="flex flex-col gap-2 mb-8">
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-purple-300 bg-clip-text text-transparent">
+            Bem-vindo, {userName}! <Coffee className="inline-block h-8 w-8 ml-2 text-purple-400" />
+          </h1>
+        </div>
+        <p className="text-gray-400">
+          Aqui está um resumo das suas atividades e métricas importantes.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

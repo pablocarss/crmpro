@@ -2,16 +2,25 @@ import { integrationService } from './integrationService';
 
 export interface WhatsAppMessage {
   id: string;
-  from: string;
-  to: string;
-  content: string;
+  text: string;
   timestamp: string;
-  status: 'sent' | 'delivered' | 'read' | 'received';
-  type: 'text' | 'template';
+  status: 'sent' | 'delivered' | 'read' | 'failed';
+  to: string;
+  from?: string;
+  type: 'text' | 'template' | 'image' | 'document';
+  mediaUrl?: string;
+}
+
+export interface WhatsAppContact {
+  phoneNumber: string;
+  name?: string;
+  lastMessage?: WhatsAppMessage;
+  unreadCount: number;
 }
 
 class WhatsAppService {
   private MESSAGES_KEY = 'whatsapp_messages';
+  private CONTACTS_KEY = 'whatsapp_contacts';
   private API_VERSION = 'v21.0';
   private BASE_URL = 'https://graph.facebook.com';
   private DEFAULT_TEST_NUMBER = '5511981842947';
@@ -86,7 +95,7 @@ class WhatsAppService {
 
       const message: WhatsAppMessage = {
         id: Date.now().toString(),
-        content: useTemplate ? 'Template testepablo' : text,
+        text: useTemplate ? 'Template testepablo' : text,
         timestamp: new Date().toISOString(),
         status: 'sent',
         to: formattedNumber,
@@ -106,15 +115,48 @@ class WhatsAppService {
     const messages = this.getMessages();
     messages.push(message);
     localStorage.setItem(this.MESSAGES_KEY, JSON.stringify(messages));
+
+    // Atualiza o contato
+    const contact = {
+      phoneNumber: message.to,
+      lastMessage: message,
+      unreadCount: 0
+    };
+    this.saveContact(contact);
   }
 
-  getMessages(): WhatsAppMessage[] {
-    const messages = localStorage.getItem(this.MESSAGES_KEY);
-    return messages ? JSON.parse(messages) : [];
+  getMessages(phoneNumber?: string): WhatsAppMessage[] {
+    const messagesJson = localStorage.getItem(this.MESSAGES_KEY);
+    const messages = messagesJson ? JSON.parse(messagesJson) : [];
+    
+    if (phoneNumber) {
+      return messages.filter(m => m.to === phoneNumber || m.from === phoneNumber);
+    }
+    
+    return messages;
   }
 
   clearMessages() {
     localStorage.removeItem(this.MESSAGES_KEY);
+  }
+
+  // Gerenciamento de contatos
+  private saveContact(contact: WhatsAppContact) {
+    const contacts = this.getContacts();
+    const existingIndex = contacts.findIndex(c => c.phoneNumber === contact.phoneNumber);
+    
+    if (existingIndex >= 0) {
+      contacts[existingIndex] = contact;
+    } else {
+      contacts.push(contact);
+    }
+    
+    localStorage.setItem(this.CONTACTS_KEY, JSON.stringify(contacts));
+  }
+
+  getContacts(): WhatsAppContact[] {
+    const contactsJson = localStorage.getItem(this.CONTACTS_KEY);
+    return contactsJson ? JSON.parse(contactsJson) : [];
   }
 }
 
